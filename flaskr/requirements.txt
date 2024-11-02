@@ -1,0 +1,5 @@
+sqlite3
+groq
+flask
+beautifulsoup4
+requests
