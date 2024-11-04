@@ -2,7 +2,6 @@
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Toggle } from "@/components/ui/toggle"
 import {
   Table,
   TableBody,
@@ -12,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 
 
 enum DataTypeToDisplay {
@@ -31,14 +32,13 @@ type appStateType = {
 }
 
 interface SearchProps {
-    bookId: string
-    setAppState: any
+    bookId: string,
+    setBookId: any,
+    setDataTypeToDisplay: any
 }
 
 interface BookDetailsProps {
-    bookText: string,
-    setAppState: any,
-    plotSummaryToggle: boolean
+    bookId: string
 }
 
 function AboutGutenberg(){
@@ -70,7 +70,21 @@ function LoadingSpinner(){
     )
 }
 
-function BookDetails({bookText, setAppState, plotSummaryToggle}: BookDetailsProps){
+function BookDetails({bookId}: BookDetailsProps){
+    const [toggleText, setToggleText] = useState<boolean>(false);
+    const [bookText, setBookText] = useState<string>("")
+    useEffect(() => {
+        // Make api call and fetch book text
+        if(toggleText){
+            // fetch plot summary
+        } else {
+            setTimeout(() => {
+                setBookText("hello")
+            }, 2000)
+            // fetch book text
+        }
+    }, [toggleText])
+
     return bookText === "" ?
         (
             <LoadingSpinner/>
@@ -78,11 +92,10 @@ function BookDetails({bookText, setAppState, plotSummaryToggle}: BookDetailsProp
         : (
         <div className="flex flex-col gap-10 overflow-hidden">
             <div className="flex justify-end">
-                <Toggle>
-                    <h1 className="text-1xl font-extrabold tracking-tight lg:text-1xl">
-                        click here for plot summary
-                    </h1>
-                </Toggle>
+                <div className="flex items-center space-x-3">
+                    <Switch onClick={() => setToggleText(!toggleText)}/>
+                    <Label className="w-32">{toggleText ? "Plot summary": "Book text"}</Label>
+                </div>
             </div>
             <div className="max-h-full overflow-y-auto">
                 <p className="leading-7 [&:not(:first-child)]:mt-6">
@@ -96,6 +109,11 @@ function BookDetails({bookText, setAppState, plotSummaryToggle}: BookDetailsProp
 
 
 function RecentActivity() {
+    const [recentActivity, setRecentActivity] = useState([])
+    useEffect(() => {
+        // fetch recent activity
+
+    }, [])
     return (
         <Table>
             <TableCaption>previously accessed books</TableCaption>
@@ -108,58 +126,48 @@ function RecentActivity() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell>1787</TableCell>
-              <TableCell>Hamlet</TableCell>
-              <TableCell>Shakespare</TableCell>
-              <TableCell>1989</TableCell>
+        {
+          recentActivity.map((activity, index) => (
+            <TableRow key={index}>
+              <TableCell>{activity.bookId}</TableCell>
+              <TableCell>{activity.title}</TableCell>
+              <TableCell>{activity.author}</TableCell>
+              <TableCell>{activity.datePublished}</TableCell>
             </TableRow>
+          ))
+        }
           </TableBody>
         </Table>
     )
 }
 
-function Search({ bookId, setAppState }: SearchProps){
-    const onSearch = () => {
-        console.log("searching for book with id: ", bookId)
-        setAppState(prevState => ({ ...prevState, dataTypeToDisplay: DataTypeToDisplay.BOOK_TEXT }))
-        // make api call to get book text
-        setTimeout(() => {
-            setAppState(prevState => ({ ...prevState, bookText: "book text" }))
-        }, 2000)
-    }
+function Search({ bookId, setBookId, setDataTypeToDisplay }: SearchProps){
     return (
         <div className="flex flex-col justify-center gap-4 row-start-2 items-center sm:items-start px-20">
             <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
                 Search book from project gutenberg
             </h3>
-            <Input placeholder="Enter book ID" value={bookId} onChange={(event) => setAppState(prevState => ({ ...prevState, bookId: event.target.value }))}/>
-            <Button className="w-full" onClick={onSearch}>Search</Button>
-            <Button className="w-full" variant="outline">Recent activity</Button>
+            <Input placeholder="Enter book ID" value={bookId} onChange={(event) => setBookId(event.target.value)}/>
+            <Button className="w-full" onClick={() => {setDataTypeToDisplay(DataTypeToDisplay.BOOK_TEXT)}}>Search</Button>
+            <Button className="w-full" variant="outline" onClick={() => {setDataTypeToDisplay(DataTypeToDisplay.RECENT_ACTIVITY)}}>Recent activity</Button>
         </div>
     );
 }
 
 
 export default function Home() {
-    const [appState, setAppState] = useState<appStateType>({
-        dataTypeToDisplay: DataTypeToDisplay.ABOUT_GUTENBERG,
-        bookId: "",
-        bookText: "",
-        plotSummary: "",
-        recentActivity: "",
-        plotSummaryToggle: false
-    })
+    const [dataTypeToDisplay, setDataTypeToDisplay] = useState<DataTypeToDisplay>(DataTypeToDisplay.ABOUT_GUTENBERG)
+    const [bookId, setBookId] = useState<string>("")
 
     return (
         <div className="flex min-h-screen">
             <div className="flex items-center justify-center h-screen w-2/5 bg-white p-6 shadow-lg">
-                <Search bookId={appState.bookId} setAppState={setAppState}/>
+                <Search bookId={bookId} setBookId={setBookId} setDataTypeToDisplay={setDataTypeToDisplay}/>
             </div>
             <div className="flex flex-col h-screen w-3/5 bg-white p-20 shadow-lg">
-                {appState.dataTypeToDisplay === DataTypeToDisplay.ABOUT_GUTENBERG && <AboutGutenberg/>}
-                {appState.dataTypeToDisplay === DataTypeToDisplay.BOOK_TEXT && <BookDetails bookText={appState.plotSummaryToggle ? appState.plotSummary : appState.bookText} setAppState={setAppState}/>}
-                {appState.dataTypeToDisplay === DataTypeToDisplay.RECENT_ACTIVITY && <RecentActivity/>}
+                {dataTypeToDisplay === DataTypeToDisplay.ABOUT_GUTENBERG && <AboutGutenberg/>}
+                {dataTypeToDisplay === DataTypeToDisplay.BOOK_TEXT && <BookDetails bookId={bookId}/>}
+                {dataTypeToDisplay === DataTypeToDisplay.RECENT_ACTIVITY && <RecentActivity/>}
             </div>
         </div>
     );
