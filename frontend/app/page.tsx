@@ -14,6 +14,7 @@ import {
 import {useEffect, useState} from 'react';
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {getRequest} from "@/app/endpoints";
 
 
 enum DataTypeToDisplay {
@@ -41,7 +42,7 @@ interface BookDetailsProps {
     bookId: string
 }
 
-function AboutGutenberg(){
+function AboutPage(){
     return (
         <>
             <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
@@ -70,39 +71,59 @@ function LoadingSpinner(){
     )
 }
 
+
+function BookViewToggle({toggleText, setToggleText}: {toggleText: boolean, setToggleText: any}){
+    return (
+        <div className="flex justify-end">
+            <div className="flex items-center space-x-3">
+                <Switch checked={toggleText} onClick={() => setToggleText(!toggleText)}/>
+                <Label className="w-32">{toggleText ? "Plot summary": "Book text"}</Label>
+            </div>
+        </div>
+    )
+}
+
+
+function BookView({toggleText, bookText}: {toggleText: boolean, bookText: string}){
+    return (
+        <div className="max-h-full overflow-y-auto overflow-x-hidden break-words p-4 max-w-full">
+            {
+                toggleText ? <p className="whitespace-pre-wrap">{bookText}</p> :
+                    <p className="whitespace-pre">{bookText}</p>
+            }
+        </div>
+    )
+}
+
+
 function BookDetails({bookId}: BookDetailsProps){
-    const [toggleText, setToggleText] = useState<boolean>(false);
+    const [toggleText, setToggleText] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
     const [bookText, setBookText] = useState<string>("")
+    const [error, setError] = useState<string>("")
     useEffect(() => {
-        // Make api call and fetch book text
-        if(toggleText){
-            // fetch plot summary
-        } else {
-            setTimeout(() => {
-                setBookText("hello")
-            }, 2000)
-            // fetch book text
-        }
-    }, [toggleText])
+        (async () => {
+            setError("")
+            setIsLoading(true);
+            try {
+                const urlToRequest = toggleText ? `http://127.0.0.1:5000/text-analysis/book/${bookId}` : `http://127.0.0.1:5000/book/${bookId}`
+                const response = await getRequest(urlToRequest)
+                setBookText(response.text)
+            } catch (error) {
+                setError(error.message)
+            }
+            setIsLoading(false);
+        })();
+    }, [toggleText, bookId])
 
-    return bookText === "" ?
-        (
-            <LoadingSpinner/>
-        )
-        : (
+    if(error){
+        return <p>{error}</p>
+    }
+
+    return (
         <div className="flex flex-col gap-10 overflow-hidden">
-            <div className="flex justify-end">
-                <div className="flex items-center space-x-3">
-                    <Switch onClick={() => setToggleText(!toggleText)}/>
-                    <Label className="w-32">{toggleText ? "Plot summary": "Book text"}</Label>
-                </div>
-            </div>
-            <div className="max-h-full overflow-y-auto">
-                <p className="leading-7 [&:not(:first-child)]:mt-6">
-                    {bookText}
-                </p>
-            </div>
-
+            {bookText != "" && <BookViewToggle toggleText={toggleText} setToggleText={setToggleText}/>}
+            {isLoading ? <LoadingSpinner/> : <BookView toggleText={toggleText} bookText={bookText}/>}
         </div>
     )
 }
@@ -110,11 +131,28 @@ function BookDetails({bookId}: BookDetailsProps){
 
 function RecentActivity() {
     const [recentActivity, setRecentActivity] = useState([])
+    const [error, setError] = useState<string>("")
+    const [isLoading, setIsLoading] = useState<boolean>(true)
     useEffect(() => {
         // fetch recent activity
-
+        (async () => {
+            setError("")
+            setIsLoading(true);
+            try {
+                const response = await getRequest(`http://127.0.0.1:5000/recent-activity`)
+                setRecentActivity(response);
+            } catch (error) {
+                setError(error.message)
+            }
+            setIsLoading(false);
+        })();
     }, [])
-    return (
+
+    if (error) {
+        return <p>{error}</p>
+    }
+
+    return isLoading ? <LoadingSpinner/> : (
         <Table>
             <TableCaption>previously accessed books</TableCaption>
           <TableHeader>
@@ -129,10 +167,10 @@ function RecentActivity() {
         {
           recentActivity.map((activity, index) => (
             <TableRow key={index}>
-              <TableCell>{activity.bookId}</TableCell>
+              <TableCell>{activity.book_id}</TableCell>
               <TableCell>{activity.title}</TableCell>
               <TableCell>{activity.author}</TableCell>
-              <TableCell>{activity.datePublished}</TableCell>
+              <TableCell>{activity.date_published}</TableCell>
             </TableRow>
           ))
         }
@@ -141,14 +179,19 @@ function RecentActivity() {
     )
 }
 
+
 function Search({ bookId, setBookId, setDataTypeToDisplay }: SearchProps){
+    const [bookIdInput, setBookIdInput] = useState<string>("")
     return (
-        <div className="flex flex-col justify-center gap-4 row-start-2 items-center sm:items-start px-20">
-            <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-                Search book from project gutenberg
+        <div className="flex flex-col justify-center gap-4 row-start-2 items-center sm:items-start px-20 w-full">
+            <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight text-center">
+                Project Gutenberg
             </h3>
-            <Input placeholder="Enter book ID" value={bookId} onChange={(event) => setBookId(event.target.value)}/>
-            <Button className="w-full" onClick={() => {setDataTypeToDisplay(DataTypeToDisplay.BOOK_TEXT)}}>Search</Button>
+            <Input placeholder="Enter book ID" value={bookIdInput} onChange={(event) => setBookIdInput(event.target.value)}/>
+            <Button className="w-full" onClick={() => {
+                setDataTypeToDisplay(DataTypeToDisplay.BOOK_TEXT)
+                setBookId(bookIdInput)
+            }}>Search Book</Button>
             <Button className="w-full" variant="outline" onClick={() => {setDataTypeToDisplay(DataTypeToDisplay.RECENT_ACTIVITY)}}>Recent activity</Button>
         </div>
     );
@@ -165,7 +208,7 @@ export default function Home() {
                 <Search bookId={bookId} setBookId={setBookId} setDataTypeToDisplay={setDataTypeToDisplay}/>
             </div>
             <div className="flex flex-col h-screen w-3/5 bg-white p-20 shadow-lg">
-                {dataTypeToDisplay === DataTypeToDisplay.ABOUT_GUTENBERG && <AboutGutenberg/>}
+                {dataTypeToDisplay === DataTypeToDisplay.ABOUT_GUTENBERG && <AboutPage/>}
                 {dataTypeToDisplay === DataTypeToDisplay.BOOK_TEXT && <BookDetails bookId={bookId}/>}
                 {dataTypeToDisplay === DataTypeToDisplay.RECENT_ACTIVITY && <RecentActivity/>}
             </div>

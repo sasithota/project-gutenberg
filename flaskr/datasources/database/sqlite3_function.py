@@ -5,7 +5,7 @@ def entry_book(book_id, text, author, title, language, date_published):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute('''
-    INSERT INTO books (book_id, text, author, title, language, language) VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO books (book_id, text, author, title, language, date_published) VALUES (?, ?, ?, ?, ?, ?)
 ''', (book_id, text, author, title, language, date_published))
     conn.commit()
     conn.close()
