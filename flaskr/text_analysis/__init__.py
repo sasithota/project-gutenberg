@@ -1,9 +1,9 @@
+import os
 from groq import Groq
 
 
 def get_plot_summary_analysis(text):
-    #TODO: remove api key from code
-    client = Groq(api_key="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")
+    client = Groq(api_key=os.getenv('GROQ_API_KEY'))
     chat = client.chat.completions.create(
         messages=[
             {
