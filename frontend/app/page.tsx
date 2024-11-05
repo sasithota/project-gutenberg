@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client"
 
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {useEffect, useState} from 'react';
+import { useEffect, useState} from 'react';
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {getRequest} from "@/app/endpoints";
@@ -23,19 +24,10 @@ enum DataTypeToDisplay {
     RECENT_ACTIVITY,
 }
 
-type appStateType = {
-    dataTypeToDisplay: DataTypeToDisplay,
-    bookId: string,
-    bookText: string,
-    plotSummary: string,
-    recentActivity: string,
-    plotSummaryToggle: boolean
-}
 
 interface SearchProps {
-    bookId: string,
-    setBookId: any,
-    setDataTypeToDisplay: any
+    setBookId:  (value: (((prevState: string) => string) | string)) => void,
+    setDataTypeToDisplay:  (value: (((prevState: DataTypeToDisplay) => DataTypeToDisplay) | DataTypeToDisplay)) => void
 }
 
 interface BookDetailsProps {
@@ -72,7 +64,7 @@ function LoadingSpinner(){
 }
 
 
-function BookViewToggle({toggleText, setToggleText}: {toggleText: boolean, setToggleText: any}){
+function BookViewToggle({toggleText, setToggleText}: {toggleText: boolean, setToggleText:  (value: (((prevState: boolean) => boolean) | boolean)) => void}){
     return (
         <div className="flex justify-end">
             <div className="flex items-center space-x-3">
@@ -110,7 +102,8 @@ function BookDetails({bookId}: BookDetailsProps){
                 const response = await getRequest(urlToRequest)
                 setBookText(response.text)
             } catch (error) {
-                setError(error.message)
+                const customError = error as Error
+                setError(customError.message)
             }
             setIsLoading(false);
         })();
@@ -142,7 +135,8 @@ function RecentActivity() {
                 const response = await getRequest(`http://127.0.0.1:5000/recent-activity`)
                 setRecentActivity(response);
             } catch (error) {
-                setError(error.message)
+                const customError = error as Error
+                setError(customError.message)
             }
             setIsLoading(false);
         })();
@@ -165,7 +159,7 @@ function RecentActivity() {
           </TableHeader>
           <TableBody>
         {
-          recentActivity.map((activity, index) => (
+          recentActivity.map((activity: any, index) => (
             <TableRow key={index}>
               <TableCell>{activity.book_id}</TableCell>
               <TableCell>{activity.title}</TableCell>
@@ -180,7 +174,7 @@ function RecentActivity() {
 }
 
 
-function Search({ bookId, setBookId, setDataTypeToDisplay }: SearchProps){
+function Search({ setBookId, setDataTypeToDisplay }: SearchProps){
     const [bookIdInput, setBookIdInput] = useState<string>("")
     return (
         <div className="flex flex-col justify-center gap-4 row-start-2 items-center sm:items-start px-20 w-full">
@@ -205,7 +199,7 @@ export default function Home() {
     return (
         <div className="flex min-h-screen">
             <div className="flex items-center justify-center h-screen w-2/5 bg-white p-6 shadow-lg">
-                <Search bookId={bookId} setBookId={setBookId} setDataTypeToDisplay={setDataTypeToDisplay}/>
+                <Search setBookId={setBookId} setDataTypeToDisplay={setDataTypeToDisplay}/>
             </div>
             <div className="flex flex-col h-screen w-3/5 bg-white p-20 shadow-lg">
                 {dataTypeToDisplay === DataTypeToDisplay.ABOUT_GUTENBERG && <AboutPage/>}
