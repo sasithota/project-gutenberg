@@ -1,6 +1,8 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export async function getRequest(url: string) {
-    const response = await fetch(url)
+    console.log(API_URL)
+    const response = await fetch(`${API_URL}${url}`)
     if(response.status == 404){
         throw new Error("Book not found!")
     }
