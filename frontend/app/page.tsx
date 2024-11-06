@@ -98,7 +98,7 @@ function BookDetails({bookId}: BookDetailsProps){
             setError("")
             setIsLoading(true);
             try {
-                const urlToRequest = toggleText ? `http://127.0.0.1:5000/text-analysis/book/${bookId}` : `http://127.0.0.1:5000/book/${bookId}`
+                const urlToRequest = toggleText ? `/text-analysis/book/${bookId}` : `/book/${bookId}`
                 const response = await getRequest(urlToRequest)
                 setBookText(response.text)
             } catch (error) {
@@ -132,7 +132,7 @@ function RecentActivity() {
             setError("")
             setIsLoading(true);
             try {
-                const response = await getRequest(`http://127.0.0.1:5000/recent-activity`)
+                const response = await getRequest(`/recent-activity`)
                 setRecentActivity(response);
             } catch (error) {
                 const customError = error as Error
